@@ -1,43 +1,66 @@
-pipeline { 
-        agent any 
-environment { 
-    DOCKERHUB_USER = 'shivasrk' 
-    IMAGE_NAME = 'shivasrk/test-nginx' 
-    IMAGE_TAG = 'lts' 
-} 
-stages { 
-    stage('Checkout') { 
-        steps { 
-            git branch: 'master', url: 
-'https://github.com/kothapalli1094/docker-nodejs.git' 
-        } 
-    } 
-    stage('Build JAR on Jenkins Host') { 
-        steps { 
-            echo "Building JAR on Jenkins host" 
-            sh './mvnw clean package -DskipTests' 
-        } 
-    } 
-    stage('Build Docker Image') { 
-        steps { 
-            echo "Building Docker image from runtime-only Dockerfile" 
-            script { 
-                
-docker.build("${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}") 
-            } 
-        } 
-    } 
-    stage('Push to DockerHub') { 
-        steps { 
-            echo "Pushing Docker image to Docker Hub" 
-            script { 
-                docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') { 
-                    
-docker.image("${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}").p
-ush() 
-                } 
-            } 
-        } 
-    } 
-} 
-} 
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('docker-jenkins')
+        IMAGE_NAME = "kothapalli1094/nodeapp"
+    }
+
+    stages {
+
+        stage('Checkout Source Code') {
+            steps {
+                echo "📦 Checking out source code..."
+                git branch: 'master', url: 'https://github.com/kothapalli1094/docker-nodejs.git'
+            }
+        }
+
+        stage('Build JAR on Jenkins Host') {
+            steps {
+                echo "⚙️ Building JAR package using Maven..."
+                // Make sure Maven is installed in Jenkins container
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo "🐳 Building Docker image..."
+                sh '''
+                    docker build -t $IMAGE_NAME:$BUILD_NUMBER .
+                    docker tag $IMAGE_NAME:$BUILD_NUMBER $IMAGE_NAME:latest
+                '''
+            }
+        }
+
+        stage('Login to DockerHub') {
+            steps {
+                echo "🔑 Logging into Docker Hub..."
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+            }
+        }
+
+        stage('Push Image to DockerHub') {
+            steps {
+                echo "⬆️ Pushing Docker image to Docker Hub..."
+                sh '''
+                    docker push $IMAGE_NAME:$BUILD_NUMBER
+                    docker push $IMAGE_NAME:latest
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "🚪 Logging out and cleaning up..."
+            sh 'docker logout'
+        }
+        success {
+            echo "✅ Build and push successful! Image: $IMAGE_NAME:$BUILD_NUMBER"
+        }
+        failure {
+            echo "❌ Build failed. Check Jenkins logs for details."
+        }
+    }
+}
