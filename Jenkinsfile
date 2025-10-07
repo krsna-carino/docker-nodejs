@@ -1,14 +1,10 @@
 pipeline {
-    agent {
-        docker {
-            image 'docker:24.0'   // Docker CLI image
-            args '-v /var/run/docker.sock:/var/run/docker.sock' // Mount host Docker daemon
-        }
-    }
+    agent any   // Runs on your Jenkins node/container with Docker access
 
     environment {
-        DOCKER_IMAGE = "shiva8890/docker-01:1"
-        DOCKERHUB_CREDENTIALS = credentials('doc-hub-cred')
+        DOCKERHUB_CREDENTIALS = credentials('doc-hub-cred') // Your Docker Hub credentials ID in Jenkins
+        IMAGE_NAME = "shiva8890/docker-01"                   // Change to your Docker Hub repo
+        IMAGE_TAG  = "1"                                     // Tag for the image
     }
 
     stages {
@@ -19,51 +15,46 @@ pipeline {
             }
         }
 
-        stage('Verify Docker Access') {
-            steps {
-                echo "🔍 Checking Docker version and permissions..."
-                sh '''
-                    docker version
-                    docker info | grep -i "server"
-                '''
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
-                echo "🐳 Building Docker image..."
-                sh 'docker build -t $DOCKER_IMAGE .'
+                echo "🔧 Building Docker image..."
+                sh """
+                    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                    docker images
+                """
             }
         }
 
-        stage('Login to DockerHub') {
+        stage('Login to Docker Hub') {
             steps {
-                echo "🔐 Logging in to DockerHub..."
-                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+                echo "🔐 Logging into Docker Hub..."
+                sh """
+                    echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS --password-stdin
+                """
             }
         }
 
-        stage('Push Image to DockerHub') {
+        stage('Push Docker Image') {
             steps {
-                echo "🚀 Pushing image to DockerHub..."
-                sh 'docker push $DOCKER_IMAGE'
+                echo "🚀 Pushing Docker image to Docker Hub..."
+                sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
             }
         }
     }
 
     post {
         always {
-            echo "🚪 Logging out and cleaning up..."
-            sh '''
+            echo "🚪 Cleaning up..."
+            sh """
                 docker logout || true
                 docker image prune -af || true
-            '''
+            """
         }
         success {
             echo "✅ Docker image built and pushed successfully!"
         }
         failure {
-            echo "❌ Build failed. Check Jenkins logs for details."
+            echo "❌ Build failed. Check logs for details."
         }
     }
 }
