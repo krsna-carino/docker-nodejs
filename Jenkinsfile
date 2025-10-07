@@ -12,7 +12,7 @@ pipeline {
 
         stage('Build docker image') {
             steps {  
-                sh 'docker build -t shivasrk/docker-job:$BUILD_NUMBER .'
+                sh 'docker build -t shivasrk/docker-pipeline:$BUILD_NUMBER .'
             }
         }
         stage('login to dockerhub') {
@@ -22,7 +22,7 @@ pipeline {
         }
         stage('push image') {
             steps{
-                sh 'docker push shivasrk/docker-job:$BUILD_NUMBER'
+                sh 'docker push shivasrk/docker-pipeline:$BUILD_NUMBER'
             }
         }
 }
