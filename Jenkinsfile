@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('docker-jenkins')
-        IMAGE_NAME = "kothapalli1094/nodeapp"
+        DOCKERHUB_CREDENTIALS = credentials('doc-hub-cred')
+        
     }
 
     stages {
@@ -15,21 +15,10 @@ pipeline {
             }
         }
 
-        stage('Build JAR on Jenkins Host') {
-            steps {
-                echo "⚙️ Building JAR package using Maven..."
-                // Make sure Maven is installed in Jenkins container
-                sh 'mvn clean package -DskipTests'
-            }
-        }
 
-        stage('Build Docker Image') {
-            steps {
-                echo "🐳 Building Docker image..."
-                sh '''
-                    docker build -t $IMAGE_NAME:$BUILD_NUMBER .
-                    docker tag $IMAGE_NAME:$BUILD_NUMBER $IMAGE_NAME:latest
-                '''
+        stage('Build docker image') {
+            steps {  
+                sh 'docker build -t shiva8890/docker-01:$BUILD_NUMBER .'
             }
         }
 
@@ -41,12 +30,8 @@ pipeline {
         }
 
         stage('Push Image to DockerHub') {
-            steps {
-                echo "⬆️ Pushing Docker image to Docker Hub..."
-                sh '''
-                    docker push $IMAGE_NAME:$BUILD_NUMBER
-                    docker push $IMAGE_NAME:latest
-                '''
+            steps{
+                sh 'docker push shiva8890/docker-01:$BUILD_NUMBER'
             }
         }
     }
