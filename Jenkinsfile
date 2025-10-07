@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'docker:24.0'   // Docker CLI image
+            args '-v /var/run/docker.sock:/var/run/docker.sock' // Mount host Docker daemon
+        }
+    }
 
     environment {
         DOCKER_IMAGE = "shiva8890/docker-01:1"
@@ -14,24 +19,17 @@ pipeline {
             }
         }
 
-        stage('Ensure Docker Installed') {
+        stage('Verify Docker Access') {
             steps {
-                echo "🔧 Checking and installing Docker if missing..."
+                echo "🔍 Checking Docker version and permissions..."
                 sh '''
-                if ! command -v docker &> /dev/null; then
-                    echo "Docker not found. Installing..."
-                    apt-get update -y
-                    apt-get install -y docker.io
-                    echo "✅ Docker installed successfully."
-                else
-                    echo "✅ Docker is already installed."
-                    docker --version
-                fi
+                    docker version
+                    docker info | grep -i "server"
                 '''
             }
         }
 
-        stage('Build docker image') {
+        stage('Build Docker Image') {
             steps {
                 echo "🐳 Building Docker image..."
                 sh 'docker build -t $DOCKER_IMAGE .'
@@ -41,7 +39,7 @@ pipeline {
         stage('Login to DockerHub') {
             steps {
                 echo "🔐 Logging in to DockerHub..."
-                sh "echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin"
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
             }
         }
 
@@ -57,8 +55,8 @@ pipeline {
         always {
             echo "🚪 Logging out and cleaning up..."
             sh '''
-            docker logout || true
-            docker image prune -af || true
+                docker logout || true
+                docker image prune -af || true
             '''
         }
         success {
