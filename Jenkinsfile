@@ -1,13 +1,13 @@
 pipeline {
     agent any
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('doc-hub-cred') // Jenkins Docker Hub credentials
+        DOCKERHUB_CREDENTIALS = credentials('Docker-credits') // Jenkins Docker Hub credentials
     }
     stages {
         stage('SCM Checkout') {
             steps {
                 echo "📦 Checking out source code..."
-                git branch: 'master', url: 'https://github.com/kothapalli1094/docker-nodejs.git'
+                git branch: 'master', url: 'https://github.com/krsna-carino/docker-nodejs.git'
             }
         }
 
@@ -21,7 +21,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo "🛠 Building Docker image..."
-                sh 'docker build -t shivasrk/docker-pipeline:$BUILD_NUMBER .'
+                sh 'docker build -t krsna/docker-pipeline:$BUILD_NUMBER .'
             }
         }
 
@@ -37,7 +37,7 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 echo "📤 Pushing Docker image to Docker Hub..."
-                sh 'docker push shivasrk/docker-pipeline:$BUILD_NUMBER'
+                sh 'docker push krsna0707/docker-pipeline:$BUILD_NUMBER'
             }
         }
     }
