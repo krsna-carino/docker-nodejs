@@ -2,6 +2,7 @@ pipeline {
     agent any
     environment {
         DOCKERHUB_CREDENTIALS = credentials('Docker-credits') // Jenkins Docker Hub credentials
+        IMAGE_NAME = "krsna/docker-pipeline" // Must match your Docker Hub repo
     }
     stages {
         stage('SCM Checkout') {
@@ -21,7 +22,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo "🛠 Building Docker image..."
-                sh 'docker build -t krsna/docker-pipeline:$BUILD_NUMBER .'
+                sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
             }
         }
 
@@ -37,7 +38,7 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 echo "📤 Pushing Docker image to Docker Hub..."
-                sh 'docker push krsna0707/docker-pipeline:$BUILD_NUMBER'
+                sh "docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
             }
         }
     }
