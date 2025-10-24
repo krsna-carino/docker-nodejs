@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "krsna0707/docker-pipeline"        // Docker Hub repo
+        IMAGE_NAME = "krsna0707/docker-pipeline"        // Docker Hub repo (your username)
         DOCKERHUB_CREDENTIALS = credentials('Docker-credits')  // Jenkins credentials ID
     }
 
